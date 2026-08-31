@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NorbuAI — RAG-based gem identification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,380..600;1,9..144,380..600&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14121c;
+    --surface: #1d1a28;
+    --surface-2: #262233;
+    --border: #352f47;
+    --text: #f3effb;
+    --text-muted: #a79dbe;
+    --violet: #8b6bff;
+    --violet-dim: #6a51c9;
+    --gold: #e8b94f;
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(139,107,255,0.14), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  a { color: var(--violet); }
+
+  img { max-width: 100%; }
+
+  .wrap{
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 28px;
+  }
+  @media (max-width: 640px){
+    .wrap{ padding: 0 18px; }
+  }
+
+  /* ---------- Header ---------- */
+
+  header.site{
+    padding: 28px 0 0;
+  }
+  @media (max-width: 640px){
+    header.site{ padding: 20px 0 0; }
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:'Fraunces', serif;
+    font-weight: 560;
+    font-size: 1.35rem;
+    letter-spacing: 0.01em;
+  }
+  .brand-mark{
+    width: 22px; height: 22px;
+    flex: none;
+  }
+
+  /* ---------- Hero ---------- */
+
+  .hero{
+    display:grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 56px;
+    align-items: center;
+    padding: 56px 0 40px;
+  }
+  @media (max-width: 860px){
+    .hero{ grid-template-columns: 1fr; padding-top: 32px; gap: 32px; }
+    .hero > div:first-child{ order: 1; }
+    .gem-visual{ order: 0; }
+  }
+  @media (max-width: 640px){
+    .hero{ padding: 24px 0 28px; gap: 24px; }
+  }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 0 0 14px;
+  }
+
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight: 460;
+    font-size: clamp(1.7rem, 6vw, 3.1rem);
+    line-height: 1.12;
+    margin: 0 0 18px;
+    letter-spacing: -0.01em;
+  }
+  h1 em{
+    font-style: italic;
+    font-weight: 560;
+    color: var(--violet);
+  }
+
+  .lede{
+    color: var(--text-muted);
+    font-size: 1.02rem;
+    max-width: 46ch;
+    margin: 0 0 30px;
+  }
+  @media (max-width: 640px){
+    .lede{ font-size: 0.96rem; margin: 0 0 24px; max-width: none; }
+  }
+
+  /* ---------- Signature gem visual ---------- */
+
+  .gem-visual{
+    position: relative;
+    aspect-ratio: 1 / 1;
+    max-width: 340px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  @media (max-width: 640px){
+    .gem-visual{ max-width: 200px; }
+  }
+  .gem-visual svg{ width: 100%; height: 100%; overflow: visible; }
+  .facet{
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 1;
+  }
+  .facet-outline{
+    fill: none;
+    stroke: url(#gemStroke);
+    stroke-width: 1.6;
+  }
+  @keyframes glint{
+    0%   { stop-color: var(--violet); }
+    50%  { stop-color: var(--gold); }
+    100% { stop-color: var(--violet); }
+  }
+  #glintStop1, #glintStop2{
+    animation: glint 6s ease-in-out infinite;
+  }
+  #glintStop2{ animation-delay: -3s; }
+  @media (prefers-reduced-motion: reduce){
+    #glintStop1, #glintStop2{ animation: none; }
+  }
+
+  /* ---------- Upload dropzone ---------- */
+
+  .dropzone{
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: 28px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  @media (max-width: 640px){
+    .dropzone{ padding: 22px 16px; }
+  }
+  .dropzone:hover, .dropzone.drag{
+    border-color: var(--violet);
+    background: var(--surface-2);
+  }
+  .dropzone:focus-visible{
+    outline: 2px solid var(--violet);
+    outline-offset: 3px;
+  }
+  .dropzone .icon{
+    width: 34px; height: 34px;
+    margin: 0 auto 12px;
+    color: var(--text-muted);
+  }
+  .dropzone .primary{
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  @media (max-width: 640px){
+    .dropzone .primary{ font-size: 0.95rem; }
+  }
+  .dropzone .secondary{
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .preview-row{
+    display:flex;
+    align-items:center;
+    gap: 14px;
+    margin-top: 16px;
+    text-align: left;
+  }
+  .preview-thumb{
+    width: 56px; height: 56px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    flex: none;
+  }
+  .preview-name{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    word-break: break-all;
+    min-width: 0;
+  }
+
+  button.analyze{
+    margin-top: 18px;
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: 10px;
+    border: none;
+    background: var(--violet);
+    color: #100e18;
+    font-family:'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 0.98rem;
+    cursor: pointer;
+    transition: background 0.15s ease, opacity 0.15s ease;
+    min-height: 48px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button.analyze:hover:not(:disabled){ background: #a186ff; }
+  button.analyze:disabled{ opacity: 0.55; cursor: not-allowed; }
+
+  .error-msg{
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: rgba(220, 90, 90, 0.12);
+    border: 1px solid rgba(220, 90, 90, 0.4);
+    color: #ff9d9d;
+    font-size: 0.88rem;
+    display:none;
+  }
+
+  /* ---------- Scanning state ---------- */
+
+  .scan-card{
+    display:none;
+    margin-top: 40px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 20px;
+  }
+  @media (max-width: 640px){
+    .scan-card{ margin-top: 28px; padding: 16px; }
+  }
+  .scan-frame{
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    max-width: 320px;
+    margin: 0 auto 16px;
+  }
+  .scan-frame img{ width: 100%; display:block; }
+  .scan-line{
+    position:absolute;
+    left:0; right:0; top:0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--violet), transparent);
+    box-shadow: 0 0 12px 2px var(--violet);
+    animation: sweep 1.8s ease-in-out infinite;
+  }
+  @keyframes sweep{
+    0% { top: 0%; }
+    50% { top: 96%; }
+    100% { top: 0%; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .scan-line{ animation: none; top: 50%; opacity: 0.6; }
+  }
+  .scan-status{
+    text-align:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  /* ---------- Results ---------- */
+
+  .results{
+    display:none;
+    margin-top: 56px;
+    padding-bottom: 80px;
+  }
+  @media (max-width: 640px){
+    .results{ margin-top: 36px; padding-bottom: 56px; }
+  }
+
+  .section-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin: 0 0 16px;
+  }
+  .section-label.violet{ color: var(--violet); }
+  .section-label.gold{ color: var(--gold); }
+
+  .id-panel{
+    border-radius: var(--radius);
+    border: 1px solid rgba(139,107,255,0.35);
+    background: linear-gradient(165deg, rgba(139,107,255,0.10), rgba(139,107,255,0.02));
+    padding: 28px;
+    margin-bottom: 40px;
+  }
+  @media (max-width: 640px){
+    .id-panel{ padding: 18px; margin-bottom: 28px; }
+  }
+  .id-panel h2{
+    font-family:'Fraunces', serif;
+    font-weight: 480;
+    font-size: 1.5rem;
+    margin: 0 0 14px;
+  }
+  @media (max-width: 640px){
+    .id-panel h2{ font-size: 1.25rem; }
+  }
+  .id-answer{
+    white-space: pre-wrap;
+    font-size: 0.98rem;
+    color: var(--text);
+    line-height: 1.65;
+    overflow-wrap: break-word;
+  }
+  @media (max-width: 640px){
+    .id-answer{ font-size: 0.92rem; }
+  }
+
+  /* Candidates grid */
+  .candidates-section{ margin-top: 18px; }
+  .candidates-title{ font-family:'Fraunces', serif; font-weight:560; font-size:1.05rem; margin: 0 0 12px; }
+  .candidates-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:12px; }
+  @media (max-width: 640px){
+    .candidates-grid{ grid-template-columns: 1fr; }
+  }
+  .candidate-card{
+    position: relative;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border: 1px solid rgba(255,255,255,0.04);
+    padding: 14px;
+    padding-right: 90px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @media (max-width: 640px){
+    .candidate-card{ padding: 14px; padding-top: 40px; }
+  }
+  .candidate-card:hover{ transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .candidate-type{ font-family:'Fraunces', serif; font-weight:600; font-size:1.02rem; margin-bottom:6px; padding-right: 4px; }
+  .candidate-evidence{ color: var(--text-muted); font-size:0.93rem; min-height:48px; overflow-wrap: break-word; }
+  .match-badge{ position:absolute; top:10px; right:10px; background: rgba(0,0,0,0.18); padding:6px 8px; border-radius:8px; font-family:'IBM Plex Mono', monospace; font-size:0.78rem; color:var(--text-muted); white-space: nowrap; }
+
+  /* Modal */
+  .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.6); display:none; align-items:center; justify-content:center; z-index:1000; padding: 16px; }
+  .modal{ position: relative; background:var(--surface); border-radius:12px; max-width:760px; width:100%; max-height:86vh; overflow:auto; padding:20px; border:1px solid var(--border); -webkit-overflow-scrolling: touch; }
+  @media (max-width: 640px){
+    .modal-overlay{ align-items: flex-end; padding: 0; }
+    .modal{ width: 100%; max-width: none; max-height: 90vh; border-radius: 16px 16px 0 0; padding: 18px; padding-right: 44px; }
+  }
+  .modal-close{ position:absolute; top:10px; right:12px; background:transparent; border:none; color:var(--text-muted); font-size:1.3rem; cursor:pointer; padding: 8px; line-height: 1; }
+  .modal-header{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding-right: 24px; }
+  .modal-title{ font-family:'Fraunces', serif; font-size:1.2rem; font-weight:600; overflow-wrap: break-word; }
+  .modal-body{ margin-top:12px; color:var(--text); overflow-wrap: break-word; }
+
+  .props-row{
+    display:flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  @media (max-width: 640px){
+    .props-row{ gap: 16px; margin-top: 18px; padding-top: 16px; }
+  }
+  .prop{
+    min-width: 160px;
+    flex: 1;
+  }
+  @media (max-width: 480px){
+    .prop{ min-width: 100%; }
+  }
+  .prop-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .prop-value{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+    overflow-wrap: break-word;
+  }
+  .confidence-bar{
+    height: 4px;
+    border-radius: 2px;
+    background: var(--surface-2);
+    overflow: hidden;
+  }
+  .confidence-fill{
+    height: 100%;
+    background: var(--gold);
+    border-radius: 2px;
+  }
+
+  .description-note{
+    margin: 18px 0 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-style: italic;
+    overflow-wrap: break-word;
+  }
+
+  .sources-grid{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+  }
+  .source-card{
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    padding: 16px;
+    width: 100%;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.2) inset;
+  }
+  @media (max-width: 640px){
+    .source-card{ padding: 14px; }
+  }
+  .source-header{
+    display:flex;
+    align-items:center;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .source-index{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+  .source-mineral{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--gold);
+    background: rgba(232,185,79,0.1);
+    border: 1px solid rgba(232,185,79,0.3);
+    padding: 3px 9px;
+    border-radius: 999px;
+    max-width: 100%;
+    overflow-wrap: break-word;
+  }
+  .source-content{
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.55;
+    max-height: 160px;
+    overflow-y: auto;
+    overflow-wrap: break-word;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .source-content p{ margin: 0 0 0.6rem; }
+  .candidate-evidence{ color: var(--text-muted); margin-top:6px; }
+
+  footer{
+    padding: 28px 0 60px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+  @media (max-width: 640px){
+    footer{ padding: 22px 0 44px; font-size: 0.78rem; }
+    footer .wrap{ line-height: 1.5; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2 L20 8 L16.5 21 L7.5 21 L4 8 Z" stroke="var(--violet)" stroke-width="1.4"/>
+        <path d="M4 8 L20 8 M8.5 8 L7.5 21 M15.5 8 L16.5 21 M12 2 L8.5 8 M12 2 L15.5 8" stroke="var(--border)" stroke-width="1"/>
+      </svg>
+      NorbuAI
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">RAG-based identification</p>
+      <h1>Point a photo<br>at a stone. <em>See what it might be.</em></h1>
+      <p class="lede">
+        NorbuAI reads the visual properties of an uploaded gemstone, then
+        cross-references them against the GIA gem reference handbook to
+        surface the most probable identification — with every source it
+        used shown alongside the result.
+      </p>
+
+      <form id="uploadForm">
+        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload a gemstone photo">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 16V4M12 4L7 9M12 4l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="primary">Drop a gemstone photo, or click to browse</div>
+          <div class="secondary">JPEG, PNG, or WEBP · up to 15MB</div>
+          <div class="preview-row" id="previewRow" style="display:none;">
+            <img class="preview-thumb" id="previewThumb" alt="">
+            <span class="preview-name" id="previewName"></span>
+          </div>
+        </div>
+        <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" style="display:none;">
+
+        <button type="submit" class="analyze" id="analyzeBtn" disabled>Analyze stone</button>
+        <div class="error-msg" id="errorMsg"></div>
+      </form>
+    </div>
+
+    <div class="gem-visual" aria-hidden="true">
+      <svg viewBox="0 0 200 220">
+        <defs>
+          <linearGradient id="gemStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop id="glintStop1" offset="0%" stop-color="var(--violet)"/>
+            <stop id="glintStop2" offset="100%" stop-color="var(--gold)"/>
+          </linearGradient>
+        </defs>
+        <path class="facet" d="M30 60 L100 20 L170 60 L145 200 L55 200 Z"/>
+        <path class="facet" d="M30 60 L170 60"/>
+        <path class="facet" d="M30 60 L55 200"/>
+        <path class="facet" d="M170 60 L145 200"/>
+        <path class="facet" d="M100 20 L65 60 M100 20 L135 60"/>
+        <path class="facet" d="M65 60 L100 200 M135 60 L100 200"/>
+        <path class="facet" d="M65 60 L135 60"/>
+        <path class="facet-outline" d="M30 60 L100 20 L170 60 L145 200 L55 200 Z"/>
+      </svg>
+    </div>
+  </section>
+
+  <div class="scan-card" id="scanCard">
+    <div class="scan-frame">
+      <img id="scanImg" alt="Uploaded gemstone photo">
+      <div class="scan-line"></div>
+    </div>
+    <p class="scan-status" id="scanStatus">Analyzing visual characteristics…</p>
+  </div>
+
+  <section class="results" id="results">
+    <div class="id-panel">
+      <p class="section-label violet">Identification</p>
+      <h2>Most probable gem type</h2>
+      <div class="id-answer" id="idAnswer"></div>
+
+      <div class="props-row">
+        <div class="prop">
+          <div class="prop-label">Detected color</div>
+          <div class="prop-value" id="propColor">—</div>
+          <div class="confidence-bar"><div class="confidence-fill" id="propColorBar"></div></div>
+        </div>
+        <div class="prop">
+          <div class="prop-label">Detected luster</div>
+          <div class="prop-value" id="propLuster">—</div>
+          <div class="confidence-bar"><div class="confidence-fill" id="propLusterBar"></div></div>
+        </div>
+      </div>
+
+      <p class="description-note" id="idDescription"></p>
+    </div>
+
+    <p class="section-label gold">Sources used</p>
+    <div class="sources-grid" id="sourcesGrid"></div>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap">Norbu — reference identification only, not a substitute for lab verification.</div>
+</footer>
+
+<script>
+  // Point this at wherever your FastAPI server (app.py) is running.
+  const API_BASE_URL = "https://rag-fast-api.vercel.app/";
+ 
+  const dropzone   = document.getElementById('dropzone');
+  const fileInput  = document.getElementById('fileInput');
+  const previewRow = document.getElementById('previewRow');
+  const previewThumb = document.getElementById('previewThumb');
+  const previewName  = document.getElementById('previewName');
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  const errorMsg   = document.getElementById('errorMsg');
+  const uploadForm = document.getElementById('uploadForm');
+  const scanCard   = document.getElementById('scanCard');
+  const scanImg    = document.getElementById('scanImg');
+  const scanStatus = document.getElementById('scanStatus');
+  const results    = document.getElementById('results');
+
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+  const MAX_BYTES = 15 * 1024 * 1024;
+
+  let selectedFile = null;
+
+  function showError(msg){
+    errorMsg.textContent = msg;
+    errorMsg.style.display = 'block';
+  }
+  function clearError(){
+    errorMsg.style.display = 'none';
+  }
+
+  function handleFile(file){
+    clearError();
+    if (!file) return;
+    if (!ALLOWED_TYPES.includes(file.type)){
+      showError(`Unsupported file type "${file.type || 'unknown'}". Use JPEG, PNG, or WEBP.`);
+      return;
+    }
+    if (file.size > MAX_BYTES){
+      showError('File too large — 15MB max.');
+      return;
+    }
+    selectedFile = file;
+    previewThumb.src = URL.createObjectURL(file);
+    previewName.textContent = file.name;
+    previewRow.style.display = 'flex';
+    analyzeBtn.disabled = false;
+  }
+
+  fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); fileInput.click(); }
+  });
+  ['dragenter','dragover'].forEach(evt =>
+    dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.add('drag'); })
+  );
+  ['dragleave','drop'].forEach(evt =>
+    dropzone.addEventListener(evt, (e) => { e.preventDefault(); dropzone.classList.remove('drag'); })
+  );
+  dropzone.addEventListener('drop', (e) => {
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+
+  function renderResults(data){
+    // simple markdown -> HTML converter for LLM/fragmented markdown
+    function escapeHtml(s){
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function cleanText(value){
+      if (value === null || value === undefined) return '';
+      let s = String(value).trim();
+      // Remove common JSON-looking fragments that sometimes leak from LLM output
+      s = s.replace(/\{\s*"?[A-Za-z_]+"?\s*:\s*.*?\}/g, '');
+      s = s.replace(/\[\s*\{.*?\}\s*\]/g, '');
+      s = s.replace(/\s{2,}/g, ' ');
+      s = s.replace(/\n{3,}/g, '\n\n');
+      s = s.replace(/\n\s*\n\s*/g, '\n\n');
+      s = s.replace(/\s+([.,;:!?])/g, '$1');
+      return s.trim();
+    }
+
+    function markdownToHtml(md){
+      if (!md) return '';
+      let s = cleanText(md);
+      // Escape first
+      s = escapeHtml(s);
+      // Code blocks ``` ```
+      s = s.replace(/```([\s\S]*?)```/g, function(_, code){ return '<pre><code>' + code + '</code></pre>'; });
+      // Inline code
+      s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+      // Links [text](url)
+      s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      // Bold **text**
+      s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      // Italic *text*
+      s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      // Bare URLs
+      s = s.replace(/(https?:\/\/\S+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+      // Paragraphs by double newline
+      const paras = s.split(/\n\s*\n/).map(p => '<p>' + p.replace(/\n/g, '<br>') + '</p>');
+      return paras.join('\n');
+    }
+
+    // Render identification answer (structured candidates list)
+    const idAnswerEl = document.getElementById('idAnswer');
+    if (Array.isArray(data.answer) && data.answer.length > 0){
+      const top = data.answer[0];
+      // Show compact card with toggle for details (avoid dumping raw JSON)
+      let html = `
+        <div style="font-size:1.15rem;font-weight:700;margin-bottom:6px;">${escapeHtml(top.gem_type)}</div>
+        <div style="color:var(--text-muted);margin-bottom:10px;">${escapeHtml(top.match_quality || '')}</div>
+        <button id="toggleDetails" style="background:transparent;border:1px solid rgba(255,255,255,0.04);padding:6px 10px;border-radius:8px;color:var(--text);cursor:pointer;">Show details</button>
+        <div id="details" style="display:none;margin-top:12px;">
+          <div>${markdownToHtml(top.evidence || '')}</div>
+          <div style="font-style:italic;color:var(--text-muted);margin-top:8px;">Confirming test: ${escapeHtml(top.confirming_test || 'N/A')}</div>
+        </div>
+      `;
+      if (data.answer.length > 1){
+        html += '<hr style="border:none;border-top:1px solid rgba(255,255,255,0.04);margin:12px 0;">';
+        html += '<div style="font-weight:600;margin-bottom:8px;color:var(--text-muted);">Other candidates</div>';
+        html += '<ol style="padding-left:18px;margin:0 0 6px 0;">';
+        data.answer.slice(1).forEach((c) => {
+          html += `<li style="margin-bottom:8px;"><div style="font-weight:600;">${escapeHtml(c.gem_type)}</div><div style="color:var(--text-muted);">${escapeHtml(c.match_quality || '')}</div><div style="font-size:0.95rem;">${markdownToHtml(c.evidence || '')}</div><div style="font-style:italic;color:var(--text-muted);">Confirming test: ${escapeHtml(c.confirming_test || 'N/A')}</div></li>`;
+        });
+        html += '</ol>';
+      }
+      idAnswerEl.innerHTML = html;
+      // Wire up toggle
+      const btn = document.getElementById('toggleDetails');
+      if (btn){
+        btn.addEventListener('click', () => {
+          const d = document.getElementById('details');
+          if (!d) return;
+          if (d.style.display === 'none'){
+            d.style.display = 'block';
+            btn.textContent = 'Hide details';
+          } else {
+            d.style.display = 'none';
+            btn.textContent = 'Show details';
+          }
+        });
+      }
+    } else {
+      idAnswerEl.textContent = 'No candidates returned';
+    }
+
+    // Render the cleaned description (remove empty spacing and stray JSON fragments)
+    const cleanDescription = cleanText(data.description || '');
+    const descHtml = markdownToHtml(cleanDescription);
+    document.getElementById('idDescription').innerHTML = descHtml || 'No detailed description available.';
+
+    // Render Top 5 Probable Identifications as a card grid
+    // remove existing candidates section if present
+    const existingSection = document.getElementById('candidatesSection');
+    if (existingSection) existingSection.remove();
+    const candidatesSection = document.createElement('div');
+    candidatesSection.id = 'candidatesSection';
+    candidatesSection.className = 'candidates-section';
+    candidatesSection.innerHTML = `<div class="candidates-title">Top 5 Probable Identifications.</div><div class="candidates-grid" id="candidatesGrid"></div>`;
+    // insert after the idAnswer element
+    idAnswerEl.parentNode.insertBefore(candidatesSection, idAnswerEl.nextSibling);
+
+    const candidatesGrid = document.getElementById('candidatesGrid');
+    const candidates = Array.isArray(data.answer) ? data.answer.slice(0,3) : [];
+
+    // create (or reuse) modal overlay
+    let modalOverlay = document.getElementById('modalOverlay');
+    if (!modalOverlay){
+      modalOverlay = document.createElement('div');
+      modalOverlay.id = 'modalOverlay';
+      modalOverlay.className = 'modal-overlay';
+      modalOverlay.innerHTML = `<div class="modal" role="dialog" aria-modal="true"><button class="modal-close" id="modalClose">✕</button><div class="modal-header"><div class="modal-title" id="modalTitle"></div></div><div class="modal-body" id="modalBody"></div></div>`;
+      document.body.appendChild(modalOverlay);
+    }
+    const modal = modalOverlay.querySelector('.modal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    const modalClose = document.getElementById('modalClose');
+    function openModal(title, bodyHtml){
+      modalTitle.textContent = title;
+      modalBody.innerHTML = bodyHtml;
+      modalOverlay.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal(){
+      modalOverlay.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+    modalClose.onclick = closeModal;
+    modalOverlay.onclick = (e) => { if (e.target === modalOverlay) closeModal(); };
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+    candidatesGrid.innerHTML = '';
+    candidates.forEach((c, idx) => {
+      const card = document.createElement('div');
+      card.className = 'candidate-card';
+      const badge = `<div class="match-badge">${escapeHtml(cleanText(c.match_quality || ''))}</div>`;
+      const type = `<div class="candidate-type">${escapeHtml(cleanText(c.gem_type))}</div>`;
+      const evidence = `<div class="candidate-evidence">${markdownToHtml(cleanText(c.evidence || '')) || 'No evidence available.'}</div>`;
+      card.innerHTML = badge + type + evidence;
+      card.addEventListener('click', () => {
+        const fullEvidence = cleanText(c.evidence || '');
+        const fullBody = fullEvidence ? markdownToHtml(fullEvidence) : 'No evidence available.';
+        const bodyHtml = `${fullBody}<div style="margin-top:12px;font-style:italic;color:var(--text-muted);">Confirming test: ${escapeHtml(cleanText(c.confirming_test || 'N/A'))}</div>`;
+        openModal(cleanText(c.gem_type) || 'Candidate', bodyHtml);
+      });
+      candidatesGrid.appendChild(card);
+    });
+
+    const color = data.cv_features.detected_color;
+    const colorConf = Math.round(data.cv_features.color_confidence * 100);
+    document.getElementById('propColor').textContent = `${color} (${colorConf}%)`;
+    document.getElementById('propColorBar').style.width = colorConf + '%';
+
+    const luster = data.cv_features.detected_luster;
+    const lusterConf = Math.round(data.cv_features.luster_confidence * 100);
+    document.getElementById('propLuster').textContent = `${luster} (${lusterConf}%)`;
+    document.getElementById('propLusterBar').style.width = lusterConf + '%';
+
+    const grid = document.getElementById('sourcesGrid');
+    grid.innerHTML = '';
+    data.retrieved_documents.forEach((doc, i) => {
+      const card = document.createElement('div');
+      card.className = 'source-card';
+      // Truncate the raw content for preview, then render markdown
+      const raw = String(doc.content || '');
+      const preview = raw.length > 600 ? raw.slice(0,600) + '…' : raw;
+      card.innerHTML = `
+        <div class="source-header">
+          <span class="source-index">#${i + 1}</span>
+          <span class="source-mineral">${escapeHtml(doc.mineral)}</span>
+        </div>
+        <div class="source-content">${markdownToHtml(preview)}</div>
+      `;
+      grid.appendChild(card);
+    });
+
+    results.style.display = 'block';
+    results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  uploadForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!selectedFile) return;
+    clearError();
+
+    results.style.display = 'none';
+    scanImg.src = previewThumb.src;
+    scanCard.style.display = 'block';
+    scanStatus.textContent = 'Analyzing visual characteristics…';
+    analyzeBtn.disabled = true;
+    scanCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    const formData = new FormData();
+    formData.append('image', selectedFile);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/identify`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok){
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail || `Request failed (${res.status})`);
+      }
+
+      const data = await res.json();
+      scanCard.style.display = 'none';
+      renderResults(data);
+    } catch (err) {
+      scanCard.style.display = 'none';
+      showError(`Analysis failed — ${err.message}. Check that the NorbuAI server is running at ${API_BASE_URL}.`);
+    } finally {
+      analyzeBtn.disabled = false;
+    }
+  });
+</script>
+
+</body>
+</html>
